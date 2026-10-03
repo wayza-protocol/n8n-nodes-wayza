@@ -1,0 +1,22 @@
+# Publishes n8n-nodes-wayza with provenance, using npm trusted publishing (OIDC): no tokens are stored anywhere.
+# The package's trusted publisher on npm is this repo, this workflow and the "release" environment.
+name: Release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm test
+      - run: npm publish --provenance --access public

@@ -37,7 +37,21 @@ function signed(status, answers, id = 42, home = HOME, { approval = approvalFor(
 }
 const answer = (o) => ({ to: 'graham@wayza.test', decision: 'approved', choice: null, text: null,
 	answered_by: 'graham@wayza.test', as: 'person', attested: 'home', at: '2026-10-02T10:00:00Z', ...o });
-const fetchJson = async (url) => { assert.strictEqual(url, `https://${HOME}/.well-known/familia.json`); return wellKnown; };
+const fetchJson = async (url) => { assert.strictEqual(url, `https://${HOME}/.well-known/wayza.json`); return wellKnown; };
+
+test('keys come from /.well-known/wayza.json, with familia.json as the fallback', async () => {
+	const rec = signed('approved', [answer()]);
+	const seen = [];
+	const oldHome = async (url) => {
+		seen.push(url);
+		if (url.endsWith('/wayza.json')) throw new Error('404');
+		return wellKnown;
+	};
+	assert.ok(await w.verifySignedAnswer(rec, { home: HOME, fetchJson: oldHome }));
+	assert.deepStrictEqual(seen, [`https://${HOME}/.well-known/wayza.json`, `https://${HOME}/.well-known/familia.json`]);
+	const down = async () => { throw new Error('offline'); };
+	await assert.rejects(w.verifySignedAnswer(rec, { home: HOME, fetchJson: down }), /Could not fetch the signing keys/);
+});
 
 test('canonical matches the contract reference', () => {
 	assert.strictEqual(w.canonical({ b: [1, null, 'é'], a: { d: undefined, c: true } }), '{"a":{"c":true,"d":null},"b":[1,null,"é"]}');
@@ -184,7 +198,7 @@ function hookContext(body, options = {}, { staticData = keptFor(approvalFor(7)),
 			getResponseObject: () => ({ status(c) { sent.code = c; return this; }, json(b) { sent.body = b; return this; } }),
 			helpers: {
 				httpRequest: async ({ url }) => {
-					if (url === `https://${OTHER}/.well-known/familia.json`) return otherWellKnown;
+					if (url === `https://${OTHER}/.well-known/wayza.json`) return otherWellKnown;
 					return fetchJson(url);
 				},
 			},

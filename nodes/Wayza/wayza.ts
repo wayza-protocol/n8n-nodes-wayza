@@ -108,13 +108,40 @@ function idFromUrl(url: string | undefined): Json {
 
 export class VerifyError extends Error {}
 
+type HomeKey = { kid?: string; alg?: string; jwk?: { kty?: string; crv?: string; x?: string } };
+
+/** Where a home publishes its signing keys: wayza.json first, then the older familia.json. */
+export const KEY_DOCS = ['/.well-known/wayza.json', '/.well-known/familia.json'];
+
+async function findKey(
+	origin: string,
+	kid: string,
+	fetchJson: (url: string) => Promise<unknown>,
+): Promise<HomeKey | undefined> {
+	let fetched = false;
+	for (const path of KEY_DOCS) {
+		let doc: { home?: { keys?: HomeKey[] } } | undefined;
+		try {
+			doc = (await fetchJson(origin + path)) as { home?: { keys?: HomeKey[] } };
+		} catch {
+			continue;
+		}
+		fetched = true;
+		const entry = (doc?.home?.keys ?? []).find((k) => k && k.kid === kid);
+		if (entry) return entry;
+	}
+	if (!fetched) throw new VerifyError(`Could not fetch the signing keys from ${origin}`);
+	return undefined;
+}
+
 export function homeNetloc(home: string): string {
 	return home.includes('://') ? new URL(home).host : home.replace(/\/+$/, '');
 }
 
 /**
  * Verify a signed answer: Ed25519 over canonical(record without sig), with keys from
- * `{origin of record.approval}/.well-known/familia.json`. The approval URL must be on
+ * `{origin of record.approval}/.well-known/wayza.json` (falling back to the older
+ * `/.well-known/familia.json` when that fails or lacks the key). The approval URL must be on
  * `record.home`, which must be the trusted `home`. https only unless `insecure`.
  */
 export async function verifySignedAnswer(
@@ -136,10 +163,7 @@ export async function verifySignedAnswer(
 	if (opts.home !== null && homeNetloc(opts.home) !== recordHome)
 		throw new VerifyError(`Signed by ${recordHome}, expected ${homeNetloc(opts.home)}`);
 
-	const doc = (await opts.fetchJson(`${u.protocol}//${u.host}/.well-known/familia.json`)) as {
-		home?: { keys?: Array<{ kid?: string; alg?: string; jwk?: { kty?: string; crv?: string; x?: string } }> };
-	};
-	const entry = (doc?.home?.keys ?? []).find((k) => k && k.kid === sig.kid);
+	const entry = await findKey(`${u.protocol}//${u.host}`, String(sig.kid), opts.fetchJson);
 	if (!entry) throw new VerifyError(`Unknown signing key ${String(sig.kid)}`);
 	const jwk = entry.jwk ?? {};
 	if ((entry.alg ?? 'Ed25519') !== 'Ed25519' || jwk.kty !== 'OKP' || jwk.crv !== 'Ed25519' || !jwk.x)

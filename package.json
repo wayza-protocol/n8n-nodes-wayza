@@ -1,11 +1,12 @@
 {
   "name": "n8n-nodes-wayza",
-  "version": "0.1.5",
-  "description": "n8n community node: ask a real person through Wayza and wait for their signed answer.",
+  "version": "0.1.6",
+  "description": "n8n community node: ask a real person, or another agent, through Wayza and wait for their signed answer.",
   "keywords": [
     "n8n-community-node-package",
     "wayza",
     "human-in-the-loop",
+    "agent-to-agent",
     "approval"
   ],
   "license": "MIT",

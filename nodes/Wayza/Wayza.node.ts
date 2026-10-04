@@ -31,7 +31,7 @@ import {
 } from './wayza';
 
 // Keep in step with package.json (a test checks it).
-export const VERSION = '0.1.5';
+export const VERSION = '0.1.6';
 const USER_AGENT = `n8n-nodes-wayza/${VERSION}`;
 
 // The { error } text Wayza sent with a failed request, wherever this n8n version put the response.
@@ -152,7 +152,7 @@ export class Wayza implements INodeType {
 				type: 'string',
 				required: true,
 				default: '',
-				placeholder: 'graham@wayza.com, @ai-1f2e3d4c, someone@example.com',
+				placeholder: 'alex@example.com, @ai-1f2e3d4c, @sam',
 				description:
 					'Wayza addresses, @handles or emails, comma-separated. Another agent\'s address works too; the output\'s "as" says whether a person or an AI answered.',
 			},

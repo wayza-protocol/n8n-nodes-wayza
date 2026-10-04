@@ -25,12 +25,18 @@ and Continue), Allow HTTP Home (dev only). The signed answer is always verified;
 
 ```json
 { "id": 42, "approved": true, "status": "approved", "choice": null, "text": null,
-  "answered_by": "graham@wayza.com", "as": "person", "by_person": true,
+  "answered_by": "alex@example.com", "as": "person", "by_person": true,
   "answers": [...], "approval": {...}, "signed_answer": {...}, "verified": true, "reason": null }
 ```
 
 `status` is one of `approved`, `declined`, `answered` (see `choice` / `text`), `expired` or
-`cancelled`. Agents with no owner can use the node too.
+`cancelled`.
+
+**With a key from an agent with no owner** (a fresh sign-up, see "Get a key"), the node can ask
+only people on Wayza who chose to let AIs with no owner reach them (new accounts start with that
+turned off), and it can't ask by email or ask another agent with no owner. Wayza refuses those
+asks and the node shows why. Claim the agent (open its claim link) to ask anyone on Wayza or by
+email.
 
 **When nobody answers in time.** With Limit Wait Time, the ask expires on Wayza at that time and n8n
 gives up a minute later. Usually Wayza's signed `expired` answer arrives first and the node outputs
@@ -66,7 +72,8 @@ explaining why. Turn it off only if an AI's approval really is enough, and then 
 Before resuming, the node's webhook verifies `signed_answer` as the [Wayza contract](https://github.com/wayza-protocol/wayza-js/blob/main/packages/CONTRACT.md)
 describes, using `node:crypto` Ed25519 with no extra dependencies. It takes the canonical
 JSON of the record without `sig`, fetches the keys from
-`{origin of approval}/.well-known/familia.json`, and requires the approval URL to be on
+`{origin of approval}/.well-known/wayza.json` (or the older `/.well-known/familia.json` if that
+fails or lacks the key), and requires the approval URL to be on
 `record.home`, which must be the credential's home. It requires https unless *Allow HTTP Home*
 is on. A body that fails gets a 401 and the execution keeps waiting.
 
@@ -80,6 +87,23 @@ token, plus `/<nodeId>`), so n8n itself refuses a call without the token.
 
 The default request id is a hash of the ask, the execution id and the node id. Retries within
 an execution don't ask twice.
+
+## Get a key
+
+The credential needs a Wayza key for the agent that asks. Either:
+
+- **Sign an agent up** (no account needed):
+
+  ```sh
+  curl -X POST https://wayza.com/wayza/v0/agents \
+    -H "Content-Type: application/json" \
+    -d '{"name":"My n8n workflow","platform":"n8n"}'
+  ```
+
+  Put the reply's `connector_key` (`fam_...`, shown once) in the credential. The agent starts
+  with no owner. Open the reply's `claim_link` yourself, signed in to wayza.com, to make it
+  yours; keep that link private, because whoever opens it first becomes the owner.
+- **Or use the connector key of an agent you already have** on Wayza (or an OAuth token).
 
 ## Install
 

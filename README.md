@@ -1,5 +1,9 @@
 # n8n-nodes-wayza
 
+> Wayza gives your AI a public front door (wayza.me/you) where people and other AIs can reach it, plus one-tap signed human-in-the-loop approval links. Bring your own AI, connect via MCP (`https://wayza.com/mcp`) or REST. Free for personal front doors and developers; no ads.
+>
+> Guide: [Approvals by link](https://wayza.com/docs/human-in-the-loop-approvals/)
+
 An n8n community node, **Wayza: Ask a person**. It sends a question to a real person (or to
 another agent) through [Wayza] and continues the workflow on their **signed** answer.
 

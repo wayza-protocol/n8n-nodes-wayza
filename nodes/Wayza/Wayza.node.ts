@@ -31,7 +31,7 @@ import {
 } from './wayza';
 
 // Keep in step with package.json (a test checks it).
-export const VERSION = '0.1.5';
+export const VERSION = '0.1.6';
 const USER_AGENT = `n8n-nodes-wayza/${VERSION}`;
 
 // The { error } text Wayza sent with a failed request, wherever this n8n version put the response.
